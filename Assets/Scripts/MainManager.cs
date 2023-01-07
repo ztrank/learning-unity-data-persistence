@@ -11,6 +11,7 @@ public class MainManager : MonoBehaviour
     public Rigidbody Ball;
 
     public Text ScoreText;
+    public Text HighScoreText;
     public GameObject GameOverText;
     
     private bool m_Started = false;
@@ -25,6 +26,14 @@ public class MainManager : MonoBehaviour
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
+        if (DataManager.Instance != null)
+        {
+            if (DataManager.Instance.HighScore > 0 && !string.IsNullOrWhiteSpace(DataManager.Instance.HighScoreName))
+            {
+                this.SetHighScoreText(DataManager.Instance.HighScoreName, DataManager.Instance.HighScore);
+            }
+        }
+
         int[] pointCountArray = new [] {1,1,2,2,5,5};
         for (int i = 0; i < LineCount; ++i)
         {
@@ -36,6 +45,11 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+    }
+
+    private void SetHighScoreText(string highScoreName, int highScore)
+    {
+        this.HighScoreText.text = $"Best Score: {highScoreName} : {highScore}";
     }
 
     private void Update()
@@ -59,6 +73,10 @@ public class MainManager : MonoBehaviour
             {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             }
+            else if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                SceneManager.LoadScene(0);
+            }
         }
     }
 
@@ -66,11 +84,21 @@ public class MainManager : MonoBehaviour
     {
         m_Points += point;
         ScoreText.text = $"Score : {m_Points}";
+        
+        if (DataManager.Instance != null && DataManager.Instance.SetNewHighScore(this.m_Points))
+        {
+            this.SetHighScoreText(DataManager.Instance.Name, this.m_Points);
+        }
     }
 
     public void GameOver()
     {
         m_GameOver = true;
+        if (DataManager.Instance != null)
+        {
+            DataManager.Instance.Save();
+        }
+
         GameOverText.SetActive(true);
     }
 }
